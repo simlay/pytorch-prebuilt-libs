@@ -29,8 +29,7 @@ jobs:
           # TODO: Add dd more flags
           # -DCMAKE_BUILD_TYPE:STRING=Release
           # Find the iOS tag
-          # Find the cross compile tag for going x86 macos to m1 macos
-          cmake -DBUILD_SHARED_LIBS:BOOL=ON -DPYTHON_EXECUTABLE:PATH=`which python3` -DCMAKE_INSTALL_PREFIX:PATH=../libtorch ../pytorch-checkout
+          cmake -DBUILD_SHARED_LIBS:BOOL=ON -DCROSS_COMPILING_MACOSX:BOOL=ON -DUSE_NUMPY:BOOL=OFF -DPYTHON_EXECUTABLE:PATH=`which python3` -DCMAKE_INSTALL_PREFIX:PATH=../libtorch ../pytorch-checkout
           cd ..
       - name: cmake build
         run: |
