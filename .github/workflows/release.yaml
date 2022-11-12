@@ -20,7 +20,7 @@ jobs:
         with:
           repository: pytorch/pytorch
           path: pytorch-checkout
-          submodules: true
+          submodules: recursive
           ref: ${{ matrix.pytorch-version }}
       - name: CMake setup
         run: |
