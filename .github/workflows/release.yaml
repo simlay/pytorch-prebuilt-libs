@@ -39,6 +39,10 @@ jobs:
           name: cmake-logs
           path: build/CMakeFiles/CMake*.log
 
+      - name: Setup tmate session
+        if: ${{ !success() }}
+        uses: mxschmitt/action-tmate@v3
+
       - name: cmake build
         run: |
           cmake --build ./build --target install # Might be able to use nproc on github runner?
@@ -50,7 +54,6 @@ jobs:
       - name: Zip up prebuilt binary
         run:
           zip -r libtorch.zip ./libtorch
-
 
       - uses: actions/github-script@v6
         name: Delete latest release
