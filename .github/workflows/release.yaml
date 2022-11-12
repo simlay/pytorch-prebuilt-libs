@@ -1,0 +1,85 @@
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+name: Build and release libtorch
+jobs:
+  build:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        pytorch-version: [ master ]
+    steps:
+      - name: Set up Git repository
+        uses: actions/checkout@v3
+      - name: Checkout pytorch
+        uses: actions/checkout@v3
+        with:
+          repository: pytorch/pytorch
+          path: pytorch-checkout
+          submodules: true
+          ref: ${{ matrix.pytorch-version }}
+      - name: CMake setup
+        run: |
+          mkdir build
+          cd build
+          # TODO: Add dd more flags
+          # -DCMAKE_BUILD_TYPE:STRING=Release
+          # Find the iOS tag
+          # Find the cross compile tag for going x86 macos to m1 macos
+          cmake -DBUILD_SHARED_LIBS:BOOL=ON -DPYTHON_EXECUTABLE:PATH=`which python3` -DCMAKE_INSTALL_PREFIX:PATH=../libtorch ../pytorch-checkout
+          cd ..
+      - name: cmake build
+        run: |
+          cmake --build ./build --target install # Might be able to use nproc on github runner?
+      - name: check on install
+        run:
+          ls libtorch/lib/*
+          objdump -a libtorch/lib/*.dylib
+
+      - name: Zip up prebuilt binary
+        run:
+          zip -r libtorch.zip ./libtorch
+
+
+      - uses: actions/github-script@v6
+        name: Delete latest release
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            let release
+            try {
+              release = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: 'latest'
+              })
+            } catch(e) {
+              console.error(e)
+              return
+            }
+
+            await github.rest.repos.deleteRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: release.data.id
+            })
+
+            await github.rest.git.deleteRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'tags/latest'
+            })
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: github.ref == 'refs/heads/main'
+        with:
+          files: libtorch.zip # TODO: Make this correct.
+          name: latest
+          tag_name: latest
