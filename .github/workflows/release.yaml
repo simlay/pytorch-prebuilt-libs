@@ -37,7 +37,7 @@ jobs:
         if: ${{ !success() }}
         with:
           name: cmake-logs
-          path: build/CMakeFiles/CMake*.log.log
+          path: build/CMakeFiles/CMake*.log
 
       - name: cmake build
         run: |
